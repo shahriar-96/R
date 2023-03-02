@@ -1,0 +1,146 @@
+---
+title: "Final exam"
+author: "Shahriar Shohid Choudhury-815468"
+date: "February 26, 2023"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+#Question 02
+
+## (a) Import KiGGS data
+
+```{r}
+library(haven)
+r <- haven::read_sav("KiGGS03_06.sav")
+```
+
+## (b) New dataframe
+
+```{r}
+kiggs <- r[, c("E070M", "E070V", "E072", "E074", "arztZ01", "sex", "age2", "schichtz", "e065z")]
+kiggs
+```
+
+## (c) Format and save the dataframe
+
+```{r}
+# Dataframe saving
+save(kiggs, file = "kiggs.Rdata")
+```
+
+##Question 03
+
+## (a)
+
+#variables factor check
+```{r}
+#Checking the variables E070M, E070V, E072, E074 are all factors or not
+is.factor(kiggs$E070M)
+is.factor(kiggs$E070V)
+is.factor(kiggs$E072)
+is.factor(kiggs$E074)
+#All the mentioned variables are factor
+```
+#value changing
+```{r}
+#Changing all children's values for the variable E074's "has not breastfed" value to NA
+levels(kiggs$E074)[levels(kiggs$E074)=="has not breastfed"]<-NA
+```
+
+#deleting empty factor
+```{r}
+kiggs <- kiggs[!is.na(kiggs$E074), ]
+```
+
+#checking the steps worked or not
+```{r}
+table(is.na(kiggs$E074))
+```
+#calculating new variable
+```{r}
+library(dplyr)
+kiggs$burdenS <- dense_rank(kiggs$E070M)+ dense_rank(kiggs$E070V)+ dense_rank(kiggs$E072)+dense_rank(kiggs$E074)
+table(kiggs$burdenS)
+#A high value indicates that the children were exposed to low level of smoking. As the rank increased 6599 were exposed with the low level of smoking. In contrast, 134 were exposed to the highest level of smoking.
+```
+## (b) Add new variable
+
+#updating
+```{r}
+save(kiggs, file = "kiggs.Rdata")
+```
+
+
+##Question 04
+
+## (a) Descriptive statistics calculation
+```{r,echo = FALSE, results = "asis"}
+kiggs$arztZ01 <- as.numeric(as.character(kiggs$arztZ01))
+round_val <- 3
+```
+
+```{r,echo = FALSE, results = "asis"}
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+
+r1 <-
+  list(
+    "arztZ01" = list(
+      "mean" = ~ round(mean(arztZ01, na.rm = TRUE), digits = round_val),
+      "sd" = ~ round(sd(arztZ01, na.rm = TRUE), digits = round_val)),
+    "sex" = list(
+      "boys" = ~ qwraps2::n_perc0(sex == "boys", show_symbol = TRUE),
+      "girls" = ~ qwraps2::n_perc0(sex == "girls", show_symbol = TRUE)),
+    "age2" = list(
+      "0-1y" = ~ qwraps2::n_perc0(age2 == "0-1y", show_symbol = TRUE),
+      "2-3y" = ~ qwraps2::n_perc0(age2 == "2-3y", show_symbol = TRUE),
+      "4-5y" = ~ qwraps2::n_perc0(age2 == "4-5y", show_symbol = TRUE),
+      "6-7y" = ~ qwraps2::n_perc0(age2 == "6-7y", show_symbol = TRUE),
+      "8-9y" = ~ qwraps2::n_perc0(age2 == "8-9y", show_symbol = TRUE),
+      "10-11y" = ~ qwraps2::n_perc0(age2 == "10-11y", show_symbol = TRUE),
+      "12-13y" = ~ qwraps2::n_perc0(age2 == "12-13y", show_symbol = TRUE),
+      "14-15y" = ~ qwraps2::n_perc0(age2 == "14-15y", show_symbol = TRUE),
+      "16-17y" = ~ qwraps2::n_perc0(age2 == "16-17y", show_symbol = TRUE)),
+    "burdenS" = list(
+      "4" = ~ qwraps2::n_perc0(burdenS == "4", show_symbol = TRUE, na_rm = TRUE),
+      "5" = ~ qwraps2::n_perc0(burdenS == "5", show_symbol = TRUE, na_rm = TRUE),
+      "6" = ~ qwraps2::n_perc0(burdenS == "6", show_symbol = TRUE, na_rm = TRUE),
+      "7" = ~ qwraps2::n_perc0(burdenS == "7", show_symbol = TRUE, na_rm = TRUE),
+      "8" = ~ qwraps2::n_perc0(burdenS == "8", show_symbol = TRUE, na_rm = TRUE),
+      "9" = ~ qwraps2::n_perc0(burdenS == "9", show_symbol = TRUE, na_rm = TRUE),
+      "10" = ~ qwraps2::n_perc0(burdenS == "10", show_symbol = TRUE, na_rm = TRUE),
+      "11" = ~ qwraps2::n_perc0(burdenS == "11", show_symbol = TRUE, na_rm = TRUE),              
+      "12" = ~ qwraps2::n_perc0(burdenS == "12", show_symbol = TRUE, na_rm = TRUE))
+  )
+    qwraps2::summary_table(kiggs, r1)
+    #The mean for number of paediatrician visits is 2.464 and the sd is 3.395
+```
+##(b) Missing values
+
+- arztZ01 has `r sum(is.na(kiggs$arztZ01))` missing values
+- sex has `r sum(is.na(kiggs$sex))` missing values
+- age2 has `r sum(is.na(kiggs$age2))` missing values
+- burdenS has `r sum(is.na(kiggs$burdenS))` missing values
+- `r sum(complete.cases(kiggs))` observations have complete data
+
+##Question 05
+
+## (a)Calculate the linear regression
+
+- arztZ01 is already a metric variable which is being used as outcome.
+- As sex, age2, schichtz and e065z are factor variables which need to      converted into metric variables as they are being used as predictor.
+
+```{r}
+# Computation of the regression model
+model_lm <- lm(arztZ01 ~ burdenS + as.numeric(sex) + as.numeric(age2) + as.numeric(schichtz) + as.numeric(e065z), data = kiggs)
+```
+
+## (b) Significance of coefficients
+```{r}
+
+
+
+
+```
