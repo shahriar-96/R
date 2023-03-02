@@ -1,0 +1,69 @@
+---
+title: "Homework 7"
+author: "Shahriar Shohid Choudhury"
+date: "December 5, 2022"
+output:
+  html_document: default
+---
+
+Download this R Markdown file, save it on your computer, and perform all the below tasks by inserting your answer in text or by inserting R chunks below. After you are done, upload this file with your solutions on Moodle.
+
+## Preparations
+
+Load KiGGS data:
+
+```{r}
+dat_link <- url("https://www.dropbox.com/s/pd0z829pv2otzqt/KiGGS03_06.RData?dl=1")
+load(dat_link)
+kiggs <- KiGGS03_06
+```
+
+## Exercise 1: Multiple imputation
+
+a) In the KiGGS dataset, choose 2 metric variables of your choice.
+
+```{r}
+str(kiggs$KreaUrin)
+table(!is.na(kiggs$KreaUrin))
+
+
+str(kiggs$ERYT)
+table(!is.na(kiggs$ERYT))
+
+```
+b) Compute the correlation between these two variables
+
+#turning y as numeric value
+```{r}
+
+kiggs$ERYT <- as.numeric(as.character(kiggs$ERYT))
+
+cor.test(kiggs$KreaUrin, kiggs$ERYT, use = "complete.obs", method = "pearson")
+
+```
+c) Perform a multiple imputation using the mice function with the 'pmm' method and otherwise default settings.
+
+```{r}
+library(mice)
+library(VIM)
+dat <- data.frame(KreaUrin= as.numeric(as.character(kiggs$KreaUrin)),
+                  ERYT= as.numeric(as.character(kiggs$ERYT)))
+
+tempData <- mice(dat, m = 5, maxit = 5, meth = 'pmm', seed = 50)
+?mice
+```
+```{r}
+summary(tempData)
+
+#imputed Dataset
+completedData1 <- complete(tempData,1)
+completedData2 <- complete(tempData,2)
+```
+
+
+d) Compute the correlation again on the multiple imputed datasets.
+
+```{r}
+modelFit1 <- with(tempData, cor(KreaUrin, ERYT, method = "pearson"))
+mean(unlist(modelFit1$analyses))
+```

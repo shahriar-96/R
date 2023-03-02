@@ -1,0 +1,126 @@
+---
+title: "Homework 8"
+author: "Shahriar Shohid Choudhury"
+date: "December 11, 2022"
+output:
+  html_document: default
+---
+
+Download this R Markdown file, save it on your computer, and perform all the below tasks by inserting your answer in text or by inserting R chunks below. After you are done, upload this file with your solutions on Moodle.
+
+## Load KiGGS data
+
+```{r}
+dat_link <- url("https://www.dropbox.com/s/pd0z829pv2otzqt/KiGGS03_06.RData?dl=1")
+load(dat_link)
+dat <- KiGGS03_06
+```
+## Exercise 1: Correlation
+
+a) In the KiGGS dataset, compute the Pearson and Spearman correlation coefficient for the two variables 'sys1' and 'sys2' and hypothesis tests whether the two variables are associated or not. Interpret the results, and decide which of the two coefficients you would report in your analysis and why.
+
+```{r}
+# Two Metric Variable
+sbp1 <- as.numeric(as.character(dat$sys1))
+sbp2 <- as.numeric(as.character(dat$sys2))
+
+# Correlations
+cor(data.frame(sbp1, sbp2), use = "complete.obs", method = "pearson")
+cor(data.frame(sbp1, sbp2), use = "complete.obs", method = "spearman")
+
+#Hypothesis test:
+cor.test(sbp1, sbp2, use = "complete.obs")
+
+#For deciding which result to report we will look for histogram
+hist(sbp1)
+hist(sbp2)
+
+# Here p values are small so enough evidence to reject the null hypothesis. I would report Pearson correlation because both are metric variables. And also normally distributed. On the other hand, Spearman correlation works better in ordinal values. 
+```
+
+b) Optional: Compute confidence intervals of the correlation coefficient estimates from part a). Note: for confidence intervals of the Spearman coefficient, you need another function.
+
+## Exercise 2: Linear regression
+
+a) Predict sys2 by sys1 using a simple linear regression, and interpret the results.
+
+```{r}
+# create variables
+sys2 <- dat$sys2
+sys1 <- dat$sys1
+
+# Check format
+str(sys2)
+str(sys1)
+
+# transform sys2 and sys1 to numeric variable!
+sys2 <- as.numeric(as.character(sys2))
+sys1 <- as.numeric(as.character(sys1))
+```
+```{r}
+
+# compute linear regression models
+res1 <- lm(sys2 ~ sys1)
+
+# Look at the results
+summary(res1)
+
+#R^2 =0.72 that means Sys1 explains 72% of the variation of sys2. 
+#The p value is low, indicating that there is a link between sys1 and sys2.
+```
+```{r}
+
+# Visualize results
+plot(sys1, sys2)
+abline(a = summary(res1)$coefficients[1, 1], b = summary(res1)$coefficients[2, 1])
+
+# get predictions of Sys2
+sys2_pred1 <- predict(res1)
+head(sys2)
+head(sys2_pred1)
+```
+b) Add age2 and sex as predictors to the linear regression model above, and interpret the results. 
+
+```{r}
+#new variables for age2 and sex 
+x <- dat$age2
+y <- dat$sex
+
+# check format
+str(x)
+str(y)
+table(x)
+table(y)
+
+
+#factorization
+x <- factor(x, labels = c("0 - 1 J.", "2 - 3 J.", "4 - 5 J.", "6 - 7 J.", "8 - 9 J.", "10 - 11 J.", "12 - 13 J.", "14 - 15 J.", "16 - 17 J."))
+y <- factor(y, labels = c("Männlich", "Weiblich"))
+
+# check again
+table(x)
+table(y)
+
+#Data are treated correctly by modeling functions when they are stored as factors.
+
+```
+```{r}
+# New linear regression model
+res2 <- lm(sys2 ~ sys1+ as.numeric(x)+as.numeric(y))
+# Look at the results
+summary(res2)
+
+#R^2=0.74
+```
+```{r}
+# Prediction
+sys2_pred2 <- predict(res2)
+head(sys2)
+head(sys2_pred2)
+
+#R^2=0.74, Age and sex do not significantly contribute to the variance of sys2 beyond what is already explained by sys1, but this does not imply that they do not contribute significantly to the variance at all.
+```
+
+## Exercise 3: Visualization of regression (optional)
+
+Use the functions in ggplot2 to compute a scatter plot and insert the regression line of the analysis in exercise 2a.

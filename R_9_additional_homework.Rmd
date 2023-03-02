@@ -1,0 +1,106 @@
+---
+title: "Additional Homework 9"
+author: "Shahriar Shohid Choudhury"
+date: "December 18, 2022"
+output:
+  html_document: default
+---
+
+Download this R Markdown file, save it on your computer, and perform all the below tasks by inserting your answer in text or by inserting R chunks below. After you are done, upload this file with your solutions on Moodle.
+
+## Exercise 1: Assumptions of linear regression
+
+Load the KiGGS dataset and compute a regression predicting BMI by sex and age groups (age2):
+
+```{r}
+# load data
+dat_link <- url("https://www.dropbox.com/s/pd0z829pv2otzqt/KiGGS03_06.RData?dl=1")
+load(dat_link)
+dat <- KiGGS03_06
+
+# Regression:
+fit1 <- lm(dat$bmiB ~ dat$sex + as.numeric(dat$age2))
+
+# results:
+summary(fit1)
+```
+```{r}
+# create variables
+bmi <- dat$bmiB
+sex <- dat$sex
+age <- dat$age2
+
+# Check format
+str(bmi)
+str(sex)
+str(age)
+
+# Regression:
+fit1 <- lm(dat$bmiB ~ dat$sex + as.numeric(dat$age2))
+
+# results:
+summary(fit1)
+```
+
+```{r}
+# get predictions
+bmi_pred1 <- predict(fit1)
+head(bmi)
+head(bmi_pred1)
+
+```
+Here are the list of assumptions:
+
+1. If Y continuous? Theoretically Yes. Continuous data changes over time and can have different values at different time intervals.
+
+2. The relationship between the Y variables and X linear?
+For this we have to check the scatter plot. The scatter plot gives, a some what good linear relation between the 2 variables
+
+```{r}
+plot(as.numeric(sex), bmi)
+plot(as.numeric(age), bmi)
+```
+Plot shows a linear relationship also we can see its slightly left skewed.
+
+3. All relevant variables (covariates, confounders) are in the model
+I think lot of other variables that could potentially be involved and can make a diffrenece.
+#I am confused about this one.
+
+4.All observations are independent
+
+Theoretically its a large sample of data and there might be some cluster in the structure however we will check the Durbin-Watson statistic of autocorrelation
+```{r}
+df <- data.frame(as.numeric(dat$sex), as.numeric(dat$age2),dat$bmiB)
+durbinWatsonTest(fit1)
+```
+The dw test statistic is 1.933, and the related p-value is 0, as can be shown. We can see a positive but not very significant correlation between the variables.
+
+5. No multicollinearity
+```{r}
+rcorr(as.matrix(df))
+```
+There is no correlation between predi
+
+6. Homoscedasticity (equal variance) of the residuals
+```{r}
+plot(fit1)
+```
+With a modest rise to the right of the figure, the variance of the residuals appears to be roughly equal.
+
+7. Normally-distributed residuals
+
+The below mentioned test verifies that the linear regression did not overlook any other important associations that might be responsible for the variation.
+```{r}
+plot(fit1, 2)
+````
+Even after log transformation, the residuals in the BMI model are still not evenly distributed.
+
+In this model, investigate and judge whether the assumptions listed on slide 13 in lecture 9 are satisfied.
+
+## Exercise 2: Model selection in linear regression (optional)
+
+In the KiGGS dataset, aim to select relevant predictors for sys12 (systolic blood pressure). Use 2 of the model selection approaches described on slide 26, apply them to the KiGGS dataset and compare the results.
+
+## Exercise 3: Linear regression with multiple imputation (optional)
+
+Run the code in the Rmd file R_9b_linear_regression_MI.Rmd, inspect the R code what it is doing, and look at the results. Apply the same to the linear regression model of another variable of your choice.
