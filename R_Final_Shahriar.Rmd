@@ -4,7 +4,7 @@ author: "Shahriar Shohid Choudhury-815468"
 date: "February 26, 2023"
 output:
   html_document: default
-  pdf_document: default
+  pdf_document : default
 ---
 
 #Question 02
@@ -24,6 +24,17 @@ kiggs
 ```
 
 ## (c) Format and save the dataframe
+
+```{r}
+kiggs$E070M    <- factor(kiggs$E070M,    labels = c("yes, daily", "yes, occasionally", "no"))
+kiggs$E070V    <- factor(kiggs$E070V,    labels = c("yes, daily", "yes, occasionally", "no"))
+kiggs$E072     <- factor(kiggs$E072,     labels = c("yes, regularly", "yes, from time to time", "no, never"))
+kiggs$E074     <- factor(kiggs$E074,     labels = c("yes, regularly", "yes, from time to time", "no, never", "has not breastfed"))
+kiggs$sex      <- factor(kiggs$sex,      labels = c("boys", "girls"))
+kiggs$age2     <- factor(kiggs$age2,     labels = c("0-1y", "2-3y", "4-5y", "6-7y", "8-9y", "10-11y", "12-13y", "14-15y", "16-17y"))
+kiggs$schichtz <- factor(kiggs$schichtz, labels = c("low social status", "medium social status", "high social status"))
+head(kiggs, n = 9)
+```
 
 ```{r}
 # Dataframe saving
@@ -46,7 +57,7 @@ is.factor(kiggs$E074)
 #value changing
 ```{r}
 #Changing all children's values for the variable E074's "has not breastfed" value to NA
-levels(kiggs$E074)[levels(kiggs$E074)=="has not breastfed"]<-NA
+kiggs["E074"][kiggs["E074"] == "has not breastfed"] <- NA
 ```
 
 #deleting empty factor
@@ -63,7 +74,7 @@ table(is.na(kiggs$E074))
 library(dplyr)
 kiggs$burdenS <- dense_rank(kiggs$E070M)+ dense_rank(kiggs$E070V)+ dense_rank(kiggs$E072)+dense_rank(kiggs$E074)
 table(kiggs$burdenS)
-#A high value indicates that the children were exposed to low level of smoking. As the rank increased 6599 were exposed with the low level of smoking. In contrast, 134 were exposed to the highest level of smoking.
+#A high value indicates that the children were exposed to low level of smoking. As the rank increased 6599 were exposed with the lowest level of smoking. In contrast, 134 were exposed to the highest level of smoking.
 ```
 ## (b) Add new variable
 
@@ -123,24 +134,65 @@ r1 <-
 - sex has `r sum(is.na(kiggs$sex))` missing values
 - age2 has `r sum(is.na(kiggs$age2))` missing values
 - burdenS has `r sum(is.na(kiggs$burdenS))` missing values
-- `r sum(complete.cases(kiggs))` observations have complete data
+- `r sum(complete.cases(kiggs[,c("age2","sex","burdenS","arztZ01"),]))` observations have complete data
 
 ##Question 05
 
 ## (a)Calculate the linear regression
 
-- arztZ01 is already a metric variable which is being used as outcome.
-- As sex, age2, schichtz and e065z are factor variables which need to      converted into metric variables as they are being used as predictor.
+Depending on how the model is interpreted, factor or metric variables may be used to calculate regression models. In order to analyze correlations between the result and factor variables as a single group, I will turn the factor into a numeric variable. To fit in the regression model the variable needs to converted in metric form. On the other hand the finest kind of regression analysis for categorical variables is logistic regression.
+
+- Here arztZ01 is already a metric variable which is being used as outcome.
+- As sex, age2, schichtz and e065z are factor variables which need to      converted into metric variables as they are being used as predictor. However burdenS is a metric variable so there is no need for conversion.
 
 ```{r}
 # Computation of the regression model
 model_lm <- lm(arztZ01 ~ burdenS + as.numeric(sex) + as.numeric(age2) + as.numeric(schichtz) + as.numeric(e065z), data = kiggs)
-```
 
-## (b) Significance of coefficients
+# Summary of the model
+r2 <- summary(model_lm)
+print(r2)
+```
+## (b) Test significance of coefficients
+
 ```{r}
-
-
-
-
+cor_data= data.frame(arztZ01= kiggs$arztZ01, burdenS= kiggs$burdenS, sex= as.numeric(kiggs$sex), age2= as.numeric(kiggs$age2), schichtz= as.numeric(kiggs$schichtz), e065z= as.numeric(kiggs$e065z))
+cor(cor_data, use = "complete.obs")
 ```
+```{r}
+#test:
+cor.test(kiggs$arztZ01, kiggs$burdenS, use = "complete.obs")
+
+#As a result, we can observe that both have a negative correlation, meaning that if one rises, the other falls. Here, the p-value is 0.073, and since it is not less than or equal to the significance level, the null hypothesis cannot be excluded.
+```
+The regression co-efficient between burdenS and artz01 is negative 0.031. There is no significant association between these two. So number of paediatrician visits does not have any significant effect on the smoking behavior of parents. And the direction is on the negative side.
+
+## (c) Suitable strategy
+
+##Question 06
+
+## (a) Effect size
+There are numerous studies that claim smoking during pregnancy has a significant impact on the weight of the unborn child. One particular study also found that smoking more than 10 cigarettes a day while pregnant causes the baby to lose a significant amount of weight—roughly 435g. In the aforementioned situation, smoking 6 to 10 cigarettes per day can reduce an infant's weight by roughly 320g[1]. This demonstrates a notable difference when compared to pregnant mothers who do not smoke. It is typical to choose a value that is 0.5 or higher for moderate to big differences. I would estimate the effect magnitude as 0.55 for this specific situation.
+
+[1] https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-018-1694-4#Abs1
+
+## (b) Appropriate statistical model
+
+Two groups of data were collected for the aforementioned sample size: one included pregnant women who smoked no cigarettes at all, and the other included pregnant women who smoked 10 cigarettes per day. I will do a paired t-test analysis because the data are in the form of matched pairs.
+
+## (c) The minimum necessary sample size
+
+```{r}
+d<- 0.55
+library(pwr)
+pwr.t.test(d = d, sig.level = 0.05, power = 0.8, type = "paired")$n
+
+#Here i am using the pwr.t.test function and the sample size is 27.928.
+```
+## (d) Is it a good study?
+
+It is not a decent study, in my opinion. The fact that this study only considers one significant factor is one of its weaknesses. We cannot determine that a single factor has a significant impact on the weight of the baby. Several elements may have a role, including genetics, mother's age, diet during pregnancy, ethnicity, and others. According to a significant study, babies born to teenage moms are 36% more likely to be underweight at delivery [1].
+
+[1] https://www.marsden-weighing.co.uk/blog/factors-affect-baby-birth-weight
+
+
